@@ -1,15 +1,16 @@
-
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <Servo.h>
 
 
-static const char* ssid = "myrouter";   // Your ROUTER SSID
-static const char* pw = "password";     // WiFi PASSWORD
+// TODO: change this for your setup
+static const char* ssid = "ssid";         // Your ROUTER SSID
+static const char* pw = "pass";           // WiFi PASSWORD
 static const int port = 9265;
 
 
 static WiFiServer server(port);
+static WiFiClient client;
 
 
 void setup()
@@ -18,23 +19,28 @@ void setup()
   
   Serial.begin(19200);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pw);
+  // FIX FOR USING 2.3.0 CORE (only .begin if not connected)
+  if (WiFi.status() != WL_CONNECTED) 
+    WiFi.begin(ssid, pw);
   
   while (WiFi.status() != WL_CONNECTED)
-    delay(1000);
+    delay(500);
 
+  // TODO
+  //Serial.swap();
+    
   server.begin();
 }
 
 static inline void pump(Stream& input, Stream& output)
 {
-  const int BUFFER_SIZE = 1024;
+  const int BUFFER_SIZE = 64;
   uint8_t buf[BUFFER_SIZE]; 
   int i = 0;
+  int value;
  
-  while ((buf[i] = input.read()) != -1 && i < BUFFER_SIZE)
-    ++i;
+  while ((value = input.read()) != -1 && i < BUFFER_SIZE)
+    buf[i++] = value;
 
   if (i > 0)
     output.write(buf, i);
@@ -42,8 +48,11 @@ static inline void pump(Stream& input, Stream& output)
 
 void loop()
 {
-  WiFiClient client = server.available();
-  if (client && client.connected())
+  if (client.connected() == false)
+  {
+    client = server.available();
+  }
+  else
   {
     pump(client, Serial);
     pump(Serial, client);
