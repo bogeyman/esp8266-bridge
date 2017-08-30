@@ -19,22 +19,29 @@ void setup()
   
   Serial.begin(19200);
 
-  // FIX FOR USING 2.3.0 CORE (only .begin if not connected)
-  if (WiFi.status() != WL_CONNECTED) 
-    WiFi.begin(ssid, pw);
+  // use in case of mode problem
+  WiFi.disconnect();
+  
+  // switch to Station mode
+  if (WiFi.getMode() != WIFI_STA)
+    WiFi.mode(WIFI_STA);
+
+  WiFi.begin(ssid, pw);
   
   while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
-
+  }
+    
   // TODO
-  //Serial.swap();
+  Serial.swap();
     
   server.begin();
 }
 
 static inline void pump(Stream& input, Stream& output)
 {
-  const int BUFFER_SIZE = 64;
+  const int BUFFER_SIZE = 128;
   uint8_t buf[BUFFER_SIZE]; 
   int i = 0;
   int value;
